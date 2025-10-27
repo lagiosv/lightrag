@@ -11,19 +11,21 @@ RUN git clone --depth=1 https://github.com/HKUDS/LightRAG.git /tmp/lightrag && \
     cp -r /tmp/lightrag/lightrag_webui . && \
     rm -rf /tmp/lightrag
 
+# Change to the correct directory and install dependencies
+WORKDIR /frontend/lightrag_webui
+
 # Install dependencies and build with bun
-RUN cd /frontend && \
-    bun install --frozen-lockfile && \
+RUN bun install --frozen-lockfile && \
     bun run build --emptyOutDir
 
 # Verify build succeeded
-RUN if [ ! -f "/frontend/dist/index.html" ]; then \
+RUN if [ ! -f "./dist/index.html" ]; then \
     echo "❌ ERROR: Frontend build failed - index.html not found"; \
-    ls -la /frontend/dist/ || echo "dist/ directory not found"; \
+    ls -la ./dist/ || echo "dist/ directory not found"; \
     exit 1; \
     fi && \
     echo "✅ Frontend build successful" && \
-    ls -lh /frontend/dist/ | head -20
+    ls -lh ./dist/ | head -20
 
 
 # Stage 2: Build Python Application
@@ -54,7 +56,7 @@ COPY app/ ./app/
 RUN mkdir -p /app/data/{rag_storage,inputs,outputs,logs}
 
 # Copy built frontend files from builder stage
-COPY --from=frontend-builder /frontend/dist /app/lightrag/api/webui
+COPY --from=frontend-builder /frontend/lightrag_webui/dist /app/lightrag/api/webui
 
 # Verify frontend files were copied
 RUN if [ ! -f "/app/lightrag/api/webui/index.html" ]; then \

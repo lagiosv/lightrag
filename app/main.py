@@ -21,12 +21,17 @@ app = FastAPI(
 
 # Configuration from environment
 WORKING_DIR = os.getenv("WORKING_DIR", "./data/rag_storage")
+
+# OpenRouter for LLM and Vision (NOT for embeddings!)
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-LLM_MODEL = os.getenv("LLM_MODEL", "anthropic/claude-3.5-sonnet")
-VISION_MODEL = os.getenv("VISION_MODEL", "openai/gpt-4o")
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
-EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "1536"))
+LLM_MODEL = os.getenv("LLM_MODEL", "anthropic/claude-sonnet-4.5")
+VISION_MODEL = os.getenv("VISION_MODEL", "openai/gpt-5")
+
+# OpenAI for Embeddings (separate API!)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-large")
+EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "3072"))
 
 # Database connections
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
@@ -93,15 +98,15 @@ def create_vision_func():
 
 
 def create_embedding_func():
-    """Create embedding function"""
+    """Create embedding function - uses OpenAI API directly (not OpenRouter!)"""
     return EmbeddingFunc(
         embedding_dim=EMBEDDING_DIM,
         max_token_size=8192,
         func=lambda texts: openai_embed(
             texts,
             model=EMBEDDING_MODEL,
-            api_key=OPENROUTER_API_KEY,
-            base_url=OPENROUTER_BASE_URL
+            api_key=OPENAI_API_KEY,  # ✅ OpenAI API key
+            base_url="https://api.openai.com/v1"  # ✅ OpenAI endpoint, not OpenRouter
         )
     )
 
@@ -120,6 +125,10 @@ async def startup_event():
     # Validate configuration
     if not OPENROUTER_API_KEY:
         logger.error("❌ OPENROUTER_API_KEY not set!")
+        return
+    
+    if not OPENAI_API_KEY:
+        logger.error("❌ OPENAI_API_KEY not set (required for embeddings)!")
         return
     
     if not NEO4J_PASSWORD:

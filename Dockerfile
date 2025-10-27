@@ -1,6 +1,9 @@
 # Stage 1: Build LightRAG WebUI Frontend
 FROM oven/bun:1-alpine AS frontend-builder
 
+# Install git in the builder stage
+RUN apk add --no-cache git
+
 WORKDIR /frontend
 
 # Clone LightRAG repository to get the webui source

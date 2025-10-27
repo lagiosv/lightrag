@@ -28,6 +28,7 @@ services:
       - ./data:/app/data
     networks:
       - coolify
+      - supabase-rag_default
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9621/health"]
       interval: 30s
@@ -39,3 +40,6 @@ networks:
   coolify:
     external: true
     name: coolify
+  supabase-rag_default:
+    external: true
+    name: supabase-rag_default

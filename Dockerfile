@@ -24,17 +24,15 @@ RUN if [ ! -f "./dist/index.html" ]; then \
     ls -la ./dist/ || echo "dist/ directory not found"; \
     exit 1; \
     fi && \
-    echo "✅ Frontend build successful" && \
-    ls -lh ./dist/ | head -20
+    echo "✅ Frontend build successful"
 
 
 # Stage 2: Build Python Application
 FROM python:3.12-slim
 
-# Install system dependencies
+# Install minimal system dependencies (no build-essential to save time)
 RUN apt-get update && \
-    apt-get install -y \
-    build-essential \
+    apt-get install -y --no-install-recommends \
     curl \
     git \
     && rm -rf /var/lib/apt/lists/*
@@ -63,8 +61,7 @@ RUN if [ ! -f "/app/lightrag/api/webui/index.html" ]; then \
     echo "❌ ERROR: Frontend files not copied to /app/lightrag/api/webui/"; \
     exit 1; \
     fi && \
-    echo "✅ Frontend files verified in container" && \
-    ls -lh /app/lightrag/api/webui/ | head -20
+    echo "✅ Frontend files verified in container"
 
 # Expose API port
 EXPOSE 9621

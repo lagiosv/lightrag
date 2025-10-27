@@ -208,9 +208,15 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    if not rag_instance:
+        raise HTTPException(
+            status_code=503,
+            detail="RAG system not initialized"
+        )
+    
     return {
-        "status": "healthy" if rag_instance else "initializing",
-        "rag_initialized": rag_instance is not None,
+        "status": "healthy",
+        "rag_initialized": True,
         "neo4j_uri": NEO4J_URI,
         "lightrag_available": LIGHTRAG_AVAILABLE
     }

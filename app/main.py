@@ -31,7 +31,7 @@ VISION_MODEL = os.getenv("VISION_MODEL", "openai/gpt-5")
 # OpenAI for Embeddings (separate API!)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-large")
-EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "3072"))
+EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "1536"))
 
 # Database connections
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")

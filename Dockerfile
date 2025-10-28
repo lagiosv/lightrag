@@ -118,4 +118,8 @@ ENV INPUT_DIR=/app/data/inputs
 # Expose API port
 EXPOSE 9621
 
+# Health check for Coolify deployment monitoring
+HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=3 \
+  CMD curl -f http://localhost:9621/health || exit 1
+
 ENTRYPOINT ["python", "-m", "lightrag.api.lightrag_server"]

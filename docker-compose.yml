@@ -24,7 +24,7 @@ services:
       - POSTGRES_DATABASE=${POSTGRES_DATABASE}
       - POSTGRES_URI=${POSTGRES_URI}
     volumes:
-      - .//app/data
+      - ./app/data
     networks:
       - coolify
     healthcheck:

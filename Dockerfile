@@ -1,24 +1,24 @@
-# LightRAG and RAG-Anything
-lightrag-hku[api]>=0.1.0
-raganything[all]>=0.1.0
+FROM python:3.12-slim
 
-# AI/ML dependencies
-openai>=1.0.0,<3.0.0
+RUN apt-get update && \
+    apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Database drivers
-neo4j>=5.15.0
-psycopg2-binary>=2.9.0
-pgvector>=0.2.0
+WORKDIR /app
 
-# Web framework
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-pydantic>=2.0.0
+COPY requirements.txt .
 
-# Document processing
-mineru>=0.1.0
-Pillow>=10.0.0
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Utilities
-python-dotenv>=1.0.0
-requests>=2.31.0
+COPY app/ ./app/
+
+RUN mkdir -p /app/data/{rag_storage,inputs,outputs,logs}
+
+EXPOSE 9621
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s \
+  CMD curl -f http://localhost:9621/health || exit 1
+
+CMD ["python", "-m", "app.main"]

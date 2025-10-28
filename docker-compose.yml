@@ -2,10 +2,14 @@ version: '3.8'
 
 services:
   lightrag:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "9621:9621"
+
+    # Resource limits for Coolify deployment
     deploy:
       resources:
         limits:
@@ -14,41 +18,96 @@ services:
         reservations:
           cpus: '2.0'
           memory: 4G
+
+    # Environment variables (passed from Coolify)
     environment:
-      - WORKING_DIR=${WORKING_DIR}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - LLM_MODEL=${LLM_MODEL}
-      - VISION_MODEL=${VISION_MODEL}
-      - EMBEDDING_MODEL=${EMBEDDING_MODEL}
-      - EMBEDDING_DIM=${EMBEDDING_DIM}
+      # Server Configuration
+      - HOST=${HOST:-0.0.0.0}
+      - PORT=${PORT:-9621}
+      - WEBUI_TITLE=${WEBUI_TITLE:-LightRAG Knowledge Base}
+      - WORKING_DIR=${WORKING_DIR:-/app/data/rag_storage}
+      - INPUT_DIR=${INPUT_DIR:-/app/data/inputs}
+      - TIKTOKEN_CACHE_DIR=${TIKTOKEN_CACHE_DIR:-/app/data/tiktoken}
+
+      # LLM Configuration (OpenRouter)
+      - LLM_BINDING=${LLM_BINDING:-openai}
+      - LLM_MODEL=${LLM_MODEL:-anthropic/claude-sonnet-4.5}
+      - LLM_BINDING_HOST=${LLM_BINDING_HOST:-https://openrouter.ai/api/v1}
+      - LLM_BINDING_API_KEY=${LLM_BINDING_API_KEY}
+      - MAX_ASYNC=${MAX_ASYNC:-4}
+      - VISION_MODEL=${VISION_MODEL:-openai/gpt-5}
+
+      # Embedding Configuration (OpenAI - 3072 dimensions)
+      - EMBEDDING_BINDING=${EMBEDDING_BINDING:-openai}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-3-large}
+      - EMBEDDING_DIM=${EMBEDDING_DIM:-3072}
+      - EMBEDDING_BINDING_HOST=${EMBEDDING_BINDING_HOST:-https://api.openai.com/v1}
+      - EMBEDDING_BINDING_API_KEY=${EMBEDDING_BINDING_API_KEY}
+
+      # Storage Configuration
+      - LIGHTRAG_GRAPH_STORAGE=${LIGHTRAG_GRAPH_STORAGE:-Neo4JStorage}
+      - LIGHTRAG_KV_STORAGE=${LIGHTRAG_KV_STORAGE:-PGKVStorage}
+      - LIGHTRAG_DOC_STATUS_STORAGE=${LIGHTRAG_DOC_STATUS_STORAGE:-PGDocStatusStorage}
+      - LIGHTRAG_VECTOR_STORAGE=${LIGHTRAG_VECTOR_STORAGE:-PGVectorStorage}
+
+      # Neo4j Configuration
       - NEO4J_URI=${NEO4J_URI}
-      - NEO4J_USERNAME=${NEO4J_USERNAME}
+      - NEO4J_USERNAME=${NEO4J_USERNAME:-neo4j}
       - NEO4J_PASSWORD=${NEO4J_PASSWORD}
-      - POSTGRES_URI=${POSTGRES_URI}
+      - NEO4J_DATABASE=${NEO4J_DATABASE:-neo4j}
+      - NEO4J_MAX_CONNECTION_POOL_SIZE=${NEO4J_MAX_CONNECTION_POOL_SIZE:-100}
+
+      # PostgreSQL Configuration (Supabase)
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DATABASE=${POSTGRES_DATABASE:-postgres}
+      - POSTGRES_MAX_CONNECTIONS=${POSTGRES_MAX_CONNECTIONS:-20}
+      - POSTGRES_VECTOR_INDEX_TYPE=${POSTGRES_VECTOR_INDEX_TYPE:-HNSW}
+      - POSTGRES_HNSW_M=${POSTGRES_HNSW_M:-16}
+      - POSTGRES_HNSW_EF=${POSTGRES_HNSW_EF:-200}
+
+      # Document Processing Configuration
+      - CHUNK_SIZE=${CHUNK_SIZE:-1200}
+      - CHUNK_OVERLAP_SIZE=${CHUNK_OVERLAP_SIZE:-100}
+      - ENABLE_LLM_CACHE=${ENABLE_LLM_CACHE:-true}
+      - ENABLE_LLM_CACHE_FOR_EXTRACT=${ENABLE_LLM_CACHE_FOR_EXTRACT:-true}
+
+    # Volume mappings for data persistence
     volumes:
-      - ./app/data:/app/data
+      - ./data:/app/data
       - lightrag-cache:/root/.cache
+
+    # Temporary file storage (fast memory-based)
     tmpfs:
       - /tmp:size=2G,mode=1777
+
+    # Coolify network for service discovery
     networks:
       - coolify
+
+    # Health check for deployment monitoring
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9621/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 120s
+      start_period: 180s
+
+    # Logging configuration
     logging:
       driver: "json-file"
       options:
         max-size: "100m"
         max-file: "3"
 
+# Named volumes
 volumes:
   lightrag-cache:
     driver: local
 
+# External Coolify network
 networks:
   coolify:
     external: true

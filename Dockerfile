@@ -1,27 +1,21 @@
 # Stage 1: Build LightRAG WebUI Frontend
 FROM oven/bun:1-alpine AS frontend-builder
 
-# Install git in the builder stage
 RUN apk add --no-cache git
 
 WORKDIR /frontend
 
-# Clone LightRAG repository to get the webui source
 RUN git clone --depth=1 https://github.com/HKUDS/LightRAG.git /tmp/lightrag && \
     cp -r /tmp/lightrag/lightrag_webui . && \
     rm -rf /tmp/lightrag
 
-# Change to the correct directory and install dependencies
 WORKDIR /frontend/lightrag_webui
 
-# Install dependencies and build with bun
 RUN bun install --frozen-lockfile && \
     bun run build --emptyOutDir
 
-# Verify build succeeded
 RUN if [ ! -f "./dist/index.html" ]; then \
-    echo "❌ ERROR: Frontend build failed - index.html not found"; \
-    ls -la ./dist/ || echo "dist/ directory not found"; \
+    echo "❌ ERROR: Frontend build failed"; \
     exit 1; \
     fi && \
     echo "✅ Frontend build successful"
@@ -30,22 +24,19 @@ RUN if [ ! -f "./dist/index.html" ]; then \
 # Stage 2: Build Python Application
 FROM python:3.12-slim
 
-# Install minimal system dependencies (no build-essential to save time)
+# Install ONLY essential system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl \
-    git \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy requirements first (for better caching)
+# Copy requirements
 COPY requirements.txt .
 
-# Install Python dependencies
-# Including raganything for multimodal document processing
-RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir raganything
+# Install Python dependencies with timeout and retries
+RUN pip install --no-cache-dir --timeout=300 -r requirements.txt
 
 # Copy application code
 COPY app/ ./app/
@@ -56,18 +47,18 @@ RUN mkdir -p /app/data/{rag_storage,inputs,outputs,logs}
 # Copy built frontend files from builder stage
 COPY --from=frontend-builder /frontend/lightrag_webui/dist /app/lightrag/api/webui
 
-# Verify frontend files were copied
+# Verify frontend files
 RUN if [ ! -f "/app/lightrag/api/webui/index.html" ]; then \
-    echo "❌ ERROR: Frontend files not copied to /app/lightrag/api/webui/"; \
+    echo "❌ ERROR: Frontend files not copied"; \
     exit 1; \
     fi && \
-    echo "✅ Frontend files verified in container"
+    echo "✅ Deployment ready"
 
 # Expose API port
 EXPOSE 9621
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s \
   CMD curl -f http://localhost:9621/health || exit 1
 
 # Run the application

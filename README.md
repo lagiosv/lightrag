@@ -1,4 +1,4 @@
-# LightRAG with RAG-Anything - Deployment
+# LightRAG with RAG-Anything - Deployment v1.0-stable
 
 Self-hosted multimodal RAG system with Neo4j knowledge graph and Supabase/pgvector for embeddings.
 

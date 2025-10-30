@@ -44,6 +44,14 @@ services:
       - EMBEDDING_BINDING_HOST=${EMBEDDING_BINDING_HOST:-https://api.openai.com/v1}
       - EMBEDDING_BINDING_API_KEY=${EMBEDDING_BINDING_API_KEY}
 
+      # Reranking Configuration (Cohere)
+      - RERANK_BINDING=${RERANK_BINDING:-cohere}
+      - RERANK_MODEL=${RERANK_MODEL:-rerank-v3.5}
+      - RERANK_BINDING_HOST=${RERANK_BINDING_HOST:-https://api.cohere.com/v2/rerank}
+      - RERANK_BINDING_API_KEY=${RERANK_BINDING_API_KEY}
+      - RERANK_BY_DEFAULT=${RERANK_BY_DEFAULT:-True}
+      - MIN_RERANK_SCORE=${MIN_RERANK_SCORE:-0.0}
+
       # Storage Configuration
       - LIGHTRAG_GRAPH_STORAGE=${LIGHTRAG_GRAPH_STORAGE:-Neo4JStorage}
       - LIGHTRAG_KV_STORAGE=${LIGHTRAG_KV_STORAGE:-PGKVStorage}
